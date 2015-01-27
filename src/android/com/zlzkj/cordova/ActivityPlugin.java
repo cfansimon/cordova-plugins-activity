@@ -16,29 +16,35 @@ import java.util.Set;
 
 public class ActivityPlugin extends CordovaPlugin {
 
-	// 可接收的方法
-	private static final String ACTION_1 = "start";
+    // 可接收的方法
+    private static final String ACTION_1 = "start";
 
     private CallbackContext myCallbackContext;
 
-	@Override
-	public boolean execute(String action, JSONArray args,
-			final CallbackContext callbackContext) throws JSONException {
+    @Override
+    public boolean execute(String action, JSONArray args,
+            final CallbackContext callbackContext) throws JSONException {
 
-		if (ACTION_1.equals(action)) {
+        if (ACTION_1.equals(action)) {
 
             this.myCallbackContext = callbackContext;
 
             try {
                 // 接收的参数
                 final String activityClassName = args.getString(0);
-                final JSONObject jsonData = args.getJSONObject(1);
 
                 //启动新的原生Activity
                 Intent intent = new Intent();
                 intent.setClass(cordova.getActivity(), Class.forName(activityClassName));
-                intent.putExtras(JSONObjectToBunble(jsonData)); //传值
-                cordova.startActivityForResult(this, intent, 1);
+                if(!args.isNull(1)) { //带参数的跳转
+                    // 接收的参数
+                    final JSONObject jsonData = args.getJSONObject(1);
+                    intent.putExtras(JSONObjectToBunble(jsonData)); //传值
+                    cordova.startActivityForResult(this, intent, 1);
+                }else{ //不带参数的跳转
+                    cordova.getActivity().startActivity(intent);
+                }
+
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -46,11 +52,11 @@ public class ActivityPlugin extends CordovaPlugin {
             }
 
         } else {
-			callbackContext.error(action + " is not a supported function.");
-			return false;
-		}
+            callbackContext.error(action + " is not a supported function.");
+            return false;
+        }
 
-	}
+    }
 
     //onActivityResult为第二个Activity执行完后的回调接收方法
     @Override
@@ -79,6 +85,9 @@ public class ActivityPlugin extends CordovaPlugin {
     private static Bundle JSONObjectToBunble(JSONObject jsonObject){
 
         Bundle bundle = new Bundle();
+        if(jsonObject==null){
+            return bundle;
+        }
         Iterator<?> it = jsonObject.keys();
         while(it.hasNext()){
             String key = it.next().toString();
@@ -100,6 +109,9 @@ public class ActivityPlugin extends CordovaPlugin {
      */
     private static JSONObject BundleToJSONObject(Bundle bundle){
         JSONObject jsonObject = new JSONObject();
+        if(bundle==null){
+            return jsonObject;
+        }
         Set<String> keySet = bundle.keySet();
         for(String key : keySet) {
             try {
