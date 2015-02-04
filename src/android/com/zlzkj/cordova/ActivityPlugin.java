@@ -23,34 +23,37 @@ public class ActivityPlugin extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args,
-            final CallbackContext callbackContext) throws JSONException {
+                           final CallbackContext callbackContext) throws JSONException {
 
         if (ACTION_1.equals(action)) {
 
             this.myCallbackContext = callbackContext;
 
-            try {
-                // 接收的参数
-                final String activityClassName = args.getString(0);
+            // 接收的参数
+            //final String activityClassName = args.getString(0);
+            final JSONArray finalArgs = args;
 
-                //启动新的原生Activity
-                Intent intent = new Intent();
-                intent.setClass(cordova.getActivity(), Class.forName(activityClassName));
-                if(!args.isNull(1)) { //带参数的跳转
-                    // 接收的参数
-                    final JSONObject jsonData = args.getJSONObject(1);
-                    intent.putExtras(JSONObjectToBunble(jsonData)); //传值
-                    cordova.startActivityForResult(this, intent, 1);
-                }else{ //不带参数的跳转
-                    cordova.getActivity().startActivity(intent);
+            cordova.getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    try {
+                        //启动新的原生Activity
+                        Intent intent = new Intent();
+                        intent.setClass(cordova.getActivity(), Class.forName(finalArgs.getString(0)));
+                        if(!finalArgs.isNull(1)) { //带参数的跳转
+                            // 接收的参数
+                            final JSONObject jsonData = finalArgs.getJSONObject(1);
+                            intent.putExtras(JSONObjectToBunble(jsonData)); //传值
+                            cordova.startActivityForResult(ActivityPlugin.this, intent, 1);
+                        }else{ //不带参数的跳转
+                            cordova.getActivity().startActivity(intent);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+            });
 
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-
+            return true;
         } else {
             callbackContext.error(action + " is not a supported function.");
             return false;
